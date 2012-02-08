@@ -2,7 +2,9 @@
 // MSP430 Reaction Game
 //
 // By: Dillon Nichols
-// http://tinkeringetc.blogspot.com/
+// http://tinkeringetc.blogspot.com/p/msp430-reaction-game.html
+//
+// Created in Code Composer Studio v4.0
 //
 // Description: 
 // Drives 8 LEDs using a shift register at a user selected rate 
@@ -23,8 +25,9 @@
 #define DATA  BIT3 	// PIN 14 OF 74HC595 -> P1.3
 #define CLOCK BIT4 	// PIN 11 OF 74HC595 -> P1.4
 #define LATCH BIT5 	// PIN 12 OF 74HC595 -> P1.5
-#define START BIT6	// LED START BUTTON -> P1.6
-#define STOP  BIT7 	// GAME STOP BUTTON -> P1.7
+#define STOP  BIT6 	// GAME STOP BUTTON -> P1.6
+#define START BIT7	// LED START / RESTART BUTTON -> P1.7
+
 
 // Declare functions
 void game (int);
@@ -146,6 +149,7 @@ void stop (void) {
 	  			main();							// does not interfere with the main function
 	  		}
 		}
+		
 	}
 }
 
