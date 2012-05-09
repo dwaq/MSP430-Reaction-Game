@@ -4,7 +4,7 @@
 // By: Dillon Nichols
 // http://tinkeringetc.blogspot.com/p/msp430-reaction-game.html
 //
-// Created in Code Composer Studio v4.0
+// Created in Code Composer Studio v4.2.5
 //
 // Description: 
 // Drives 8 LEDs using a shift register at a user selected rate 
@@ -25,28 +25,29 @@
 #define DATA  BIT3 	// PIN 14 OF 74HC595 -> P1.3
 #define CLOCK BIT4 	// PIN 11 OF 74HC595 -> P1.4
 #define LATCH BIT5 	// PIN 12 OF 74HC595 -> P1.5
-#define STOP  BIT6 	// GAME STOP BUTTON -> P1.6
-#define START BIT7	// LED START / RESTART BUTTON -> P1.7
-
+#define STOP  BIT6 	// GAME STOP / RESTART BUTTON -> P1.6
+#define START BIT7	// LED START / RESET BUTTON -> P1.7
 
 // Declare functions
-void game (int);
+void game (void);
 void stop (void);
+void restart (void);
 void delay (unsigned int);
 void pinWrite (unsigned int, unsigned char);
 void pulseClock (void);
 void shiftOut (unsigned char);
 
+// Store time between LED flashes as a global variable so all functions can access it
+int delayTime;		
+
 // Uses potentiometer through the ADC10 to select how quickly LEDs will cycle
 int main(void) {
-	WDTCTL = WDTPW + WDTHOLD; 					// Stop WDT
-	ADC10CTL0 = ADC10SHT_2 + ADC10ON + ADC10IE; // ADC10ON, interrupt enabled
-	ADC10CTL1 = INCH_1;                       	// input A1
-	ADC10AE0 |= 0x02;                         	// P1.1 ADC input select
-	P1DIR |= (DATA + CLOCK + LATCH);  			// Setup shift register pins as outputs
+	WDTCTL = WDTPW + WDTHOLD;					// Stop WDT
+	ADC10CTL0 = ADC10SHT_2 + ADC10ON + ADC10IE;	// ADC10ON, interrupt enabled
+	ADC10CTL1 = INCH_1;							// input A1
+	ADC10AE0 |= 0x02;							// P1.1 ADC input select
+	P1DIR |= (DATA + CLOCK + LATCH);			// Setup shift register pins as outputs
 
-  	int delayTime;								// Store time between LEDs
-  
   	// Reads ADC values and lights LEDS and sets the delay time corresponding to the input voltage
   	// Lower values on the ADC equals more delayTime
 	for (;;) {
@@ -77,23 +78,21 @@ int main(void) {
 		if (ADC10MEM > 0x37F) {
 	    	shiftOut(1 << 0);
 	    	delayTime = 30;   }
-	  	if ((P1IN & START) == START) {			// When the START button is pressed, the game
-	  		game(delayTime);         }			// will start with the selected delayTime
-	  		
+	  	if ((P1IN & START) == START) {	// When the START button is pressed, the game
+	  		game();         }			// will start with the selected delayTime	
 	}
-	
 }
 
 // ADC10 interrupt service routine
 #pragma vector=ADC10_VECTOR
 __interrupt void ADC10_ISR(void)
 {
-  __bic_SR_register_on_exit(CPUOFF);        	// Clear CPUOFF bit from 0(SR)
+  __bic_SR_register_on_exit(CPUOFF);	// Clear CPUOFF bit from 0(SR)
 }
 
 // Function that flashes the LEDs back and forth with a delay between LEDs of delayTime
 // Waits for the STOP button to be pressed to stop the LED and win/(lose?) the game
-void game(int delayTime){
+void game(void){
 	for (;;){
     	shiftOut(1 << 0);
       	delay(delayTime); 
@@ -140,8 +139,21 @@ void game(int delayTime){
 	}
 }
 
-// Displays the LED that was stopped on and gives the user the option to restart
+// Ensures that the STOP button is released after finishing a game
 void stop (void) {
+	for (;;) {
+		if ((P1IN & STOP) == STOP) {			// Waits to STOP button to be pressed
+			delay(50);
+  			if ((P1IN & STOP) != STOP) {		// Waits for STOP buton to be released so it 
+  				restart();				
+  			}
+		}
+	}
+}
+
+// Gives the user the option to restart at the same speed with the STOP button
+// or select a new speed with the START button
+void restart (void) {
 	for (;;) {
 		if ((P1IN & START) == START) {			// Waits to START button to be pressed
 			delay(50);
@@ -149,7 +161,12 @@ void stop (void) {
 	  			main();							// does not interfere with the main function
 	  		}
 		}
-		
+		if ((P1IN & STOP) == STOP) {			// Waits to STOP button to be pressed
+			delay(50);
+	  		if ((P1IN & STOP) != STOP) {		// Waits for STOP buton to be released so it 
+	  			game();							// does not interfere with the game function
+	  		}
+		}
 	}
 }
 
@@ -157,7 +174,7 @@ void stop (void) {
 // Delays by the specified Milliseconds
 void delay(unsigned int ms) {
  	while (ms--) {
-		__delay_cycles(1000); 					// set for 16Mhz change it to 1000 for 1 Mhz
+		__delay_cycles(1000);
     }
 }
  
