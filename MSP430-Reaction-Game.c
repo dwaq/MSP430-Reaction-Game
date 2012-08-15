@@ -17,6 +17,7 @@
 // * Christopher Chenoweth's delay function located at: http://www.threadabort.com/?p=26
 // * The "SCIENTIFIC INSTRUMENTS USING THE TI MSP430" blog located at http://mspsci.blogspot.com/
 //
+// This work is licensed under a Creative Commons Attribution 3.0 Unported License.
 //*************************************************************************************************
 #include "msp430g2231.h"
  
